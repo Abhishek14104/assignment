@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.paginator-custom .p-paginator-page {
+    background-color: #f0f0f0;
+    color: #333;
+    border-radius: 5px;
+    padding: 5px 10px;
+    margin-right: 10px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .paginator-custom .p-paginator-page:hover {
+    background-color: #dcdcdc;
+  }
+  
+  .paginator-custom .p-paginator-page:last-child {
+    margin-right: 0;
+  }
+  

@@ -6,7 +6,7 @@ import { InputSwitch } from 'primereact/inputswitch';
 import { OverlayPanel } from 'primereact/overlaypanel';
 import { FaChevronDown } from 'react-icons/fa';
 import useApi from './hooks/useApi';
-import './index.css'
+import './index.css';
 
 interface Artwork {
   title: string;
@@ -98,84 +98,113 @@ function App() {
     }
   }, [data, pageSize, remainingToSelect]);
 
+  const handleRowSelection = (rowData: Artwork) => {
+    setSelectedRows((prevSelected) => {
+      const isSelected = prevSelected.includes(rowData);
+      if (isSelected) {
+        return prevSelected.filter(item => item !== rowData);
+      } else {
+        return [...prevSelected, rowData];
+      }
+    });
+  };
+
   return (
-    <div className='w-full h-screen flex flex-col justify-center items-center'>
-      {!loading && !dataLoaded && <p>Loading data...</p>}
-      {error && <p>Error: {error}</p>}
+    <div className='flex justify-center items-center min-h-screen p-4'>
+      <div className='w-full max-w-4xl'>
+        {!loading && !dataLoaded && <p>Loading data...</p>}
+        {error && <p>Error: {error}</p>}
 
-      {!loading && !error && data && data.length > 0 ? (
-        <>
-          {dataLoaded && (
-            <div className='flex justify-content-center align-items-center mb-4 gap-2'>
-              <InputSwitch
-                inputId="rowclick"
-                checked={rowClick}
-                onChange={(e) => setRowClick(e.value)}
-              />
-              <label htmlFor="rowclick">Row Click</label>
-            </div>
-          )}
+        {!loading && !error && data && data.length > 0 ? (
+          <>
+            {dataLoaded && (
+              <div className='flex items-center mb-4 gap-2'>
+                <InputSwitch
+                  inputId="rowclick"
+                  checked={rowClick}
+                  onChange={(e) => setRowClick(e.value)}
+                />
+                <label htmlFor="rowclick">Row Click</label>
+              </div>
+            )}
 
-          <div className='w-full p-4'>
-            <DataTable
-              value={data}
-              paginator={false}
-              selectionMode={rowClick ? 'multiple' : 'checkbox'}
-              selection={selectedRows}
-              onSelectionChange={(e: any) => setSelectedRows(e.value)}
-            >
-              <Column
-                header={
-                  <div className="flex items-center">
-                    <button type="button" onClick={(e) => op.current.toggle(e)}><FaChevronDown /></button>
-                    <OverlayPanel ref={op}>
-                      <div className='bg-white p-5 border'>
-                        <form className='flex flex-col gap-3 ' onSubmit={handleSubmit}>
-                          <input
-                            type='text'
-                            placeholder='Number of Rows'
-                            className='border px-2 py-2 rounded-lg'
-                            value={inputValue}
-                            onChange={handleInputChange}
-                          />
-                          <button type='submit' className='px-3 py-2 bg-slate-500 rounded-lg'>Submit</button>
-                        </form>
-                      </div>
-                    </OverlayPanel>
-                  </div>
+            <div className='w-full'>
+              <DataTable
+                value={data}
+                paginator={false}
+                selectionMode={rowClick ? 'multiple' : 'checkbox'}
+                selection={selectedRows}
+                onSelectionChange={(e: any) => setSelectedRows(e.value)}
+                rowClassName={(rowData) =>
+                  selectedRows.includes(rowData) ? 'bg-blue-100' : ''
                 }
-                headerStyle={{ width: '4px' }}
-              />
+                className='space-y-4' // Gap between rows
+              >
+                <Column
+                  header={
+                    <div className="flex items-center">
+                      <button type="button" onClick={(e) => op.current.toggle(e)} className="p-2"><FaChevronDown /></button>
+                      <OverlayPanel ref={op}>
+                        <div className='bg-white p-5 border rounded-lg'>
+                          <form className='flex flex-col gap-3 ' onSubmit={handleSubmit}>
+                            <input
+                              type='text'
+                              placeholder='Number of Rows'
+                              className='border px-2 py-2 rounded-lg'
+                              value={inputValue}
+                              onChange={handleInputChange}
+                              autoFocus // Add autofocus here
+                            />
+                            <button type='submit' className='px-3 py-2 bg-slate-500 text-white rounded-lg'>Submit</button>
+                          </form>
+                        </div>
+                      </OverlayPanel>
+                    </div>
+                  }
+                  headerStyle={{ width: '4px' }}
+                />
 
-              <Column selectionMode="multiple" headerStyle={{ width: '3rem' }} />
-              <Column field="id" header="Id" />
-              <Column field="title" header="Title" />
-              <Column field="place_of_origin" header="Place of Origin" />
-              <Column
-                field="inscriptions"
-                header="Inscriptions"
-                body={(rowData: Artwork) => rowData.inscriptions ? rowData.inscriptions : "--"}
-              />
-              <Column field="artist_title" header="Artist" />
-              <Column field="date_start" header="Starting Date" />
-              <Column field="date_end" header="Ending Date" />
-            </DataTable>
+                <Column
+                  selectionMode="multiple"
+                  body={(rowData: Artwork) => (
+                    <input
+                      type="checkbox"
+                      checked={selectedRows.includes(rowData)}
+                      onChange={() => handleRowSelection(rowData)}
+                      className="custom-checkbox" // Apply custom styling
+                    />
+                  )}
+                  headerStyle={{ width: '3rem' }}
+                />
+                <Column field="title" header="Title" headerStyle={{ width: '10rem' }} />
+                <Column field="place_of_origin" header="Place of Origin" headerStyle={{ width: '8rem' }} />
+                <Column
+                  field="inscriptions"
+                  header="Inscriptions"
+                  body={(rowData: Artwork) => rowData.inscriptions ? rowData.inscriptions : "--"}
+                  headerStyle={{ width: '25rem'}}
+                />
+                <Column field="artist_title" header="Artist" headerStyle={{ width: '10rem' }} />
+                <Column field="date_start" header="Starting Date" headerStyle={{ width: '6rem' }} />
+                <Column field="date_end" header="Ending Date" headerStyle={{ width: '6rem' }} />
+              </DataTable>
 
-            <Paginator
-              first={pageSize * (pageNumber - 1)}
-              rows={pageSize}
-              totalRecords={totalRecords}
-              onPageChange={onPageChange}
-              template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
-              className="paginator-custom gap-5"
-            />
-            <p>numberValue: {numberValue}</p>
-            <p>pageNumber: {pageNumber}</p>
-          </div>
-        </>
-      ) : (
-        !loading && <p>No data found</p>
-      )}
+              <Paginator
+                first={pageSize * (pageNumber - 1)}
+                rows={pageSize}
+                totalRecords={totalRecords}
+                onPageChange={onPageChange}
+                template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+                className="paginator-custom gap-5"
+              />
+              <p>numberValue: {numberValue}</p>
+              <p>pageNumber: {pageNumber}</p>
+            </div>
+          </>
+        ) : (
+          !loading && <p>No data found</p>
+        )}
+      </div>
     </div>
   );
 }

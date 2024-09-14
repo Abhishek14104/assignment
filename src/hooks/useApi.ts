@@ -15,6 +15,9 @@ const useApi = (pageNumber: number) => {
         if (!response.ok) {
           throw new Error("API issue");
         }
+
+        console.log({pageNumber}, typeof(pageNumber)  )
+
         const result = await response.json();
         setData(result.data || []);
       } catch (err) {

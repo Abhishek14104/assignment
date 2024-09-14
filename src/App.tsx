@@ -23,10 +23,11 @@ function App() {
   const [selectedRows, setSelectedRows] = useState<Artwork[]>([]);
   const [rowClick, setRowClick] = useState<boolean>(true);
   const [pageNumber, setPageNumber] = useState<number>(1);
-  const [pageSize] = useState<number>(12);
+  const pageSize = 12;
   const [dataLoaded, setDataLoaded] = useState<boolean>(false);
 
   const { data, loading, error } = useApi(pageNumber);
+
   useEffect(() => {
     if (!loading && data) {
       setDataLoaded(true);
@@ -35,44 +36,28 @@ function App() {
 
   const [inputValue, setInputValue] = useState<string>('');
   const [numberValue, setNumberValue] = useState<number | null>(null);
+  const [remainingToSelect, setRemainingToSelect] = useState<number | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   };
 
-  {/*---------------------------------------------------------------------------- */ }
-
-  const [remainingToSelect, setRemainingToSelect] = useState<number | null>(null);
-
-  const onPageChange = useCallback((event: { page: number }) => {
-    setPageNumber(event.page + 1);
-
-    console.log(typeof (remainingToSelect))
-    console.log(remainingToSelect)
-
-    if (remainingToSelect && data) {
-      console.log("ho gaya")
-      let nextPageData = data.slice(0, pageSize);
-      let rowsFromPage = nextPageData.slice(0, Math.min(remainingToSelect, pageSize));
-
-      setSelectedRows((prevSelected) => [...prevSelected, ...rowsFromPage]);
-      setRemainingToSelect((prevRemaining) => prevRemaining ? prevRemaining - rowsFromPage.length : null);
-
-    }
-  }, [data, pageSize, remainingToSelect]);
-
-
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const valueAsNumber = parseFloat(inputValue);
-
+  
     if (!isNaN(valueAsNumber) && valueAsNumber > 0) {
-      setNumberValue(valueAsNumber);
-      setRemainingToSelect(remainingToSelect);
+      const totalRowsToSelect = valueAsNumber;
+  
       setSelectedRows([]);
+      setRemainingToSelect(totalRowsToSelect);
+
+      console.log({totalRowsToSelect});
+      setNumberValue(totalRowsToSelect);
     } else {
       alert('Invalid number');
     }
+    console.log({selectedRows});
   };
 
   useEffect(() => {
@@ -82,19 +67,36 @@ function App() {
 
       let currentPageData = data.slice(0, pageSize);
       let rowsFromPage = currentPageData.slice(0, Math.min(remainingRowsToSelect, pageSize));
-
+      
       rowsToSelect = [...selectedRows, ...rowsFromPage];
       remainingRowsToSelect -= rowsFromPage.length;
 
       setSelectedRows(rowsToSelect);
 
-      if (remainingRowsToSelect > 0) {
-        setRemainingToSelect(remainingRowsToSelect);
-      } else {
-        setRemainingToSelect(null);
+      console.log({remainingRowsToSelect});
+      setRemainingToSelect(remainingRowsToSelect);
+    }
+  }, [numberValue, data, pageSize, rowClick]);
+
+  const onPageChange = useCallback(async (event: { page: number }) => {
+    setPageNumber(event.page + 1);
+    console.log({data});
+
+    if (remainingToSelect) {
+      console.log("Page change ho gaya");
+
+      if (!loading) {
+        let nextPageData = data.slice((event.page) * pageSize, (event.page + 1) * pageSize);
+        let rowsFromPage = nextPageData.slice(0, Math.min(remainingToSelect, pageSize));
+
+        console.log({remainingToSelect});
+        console.log({rowsFromPage});
+
+        setSelectedRows((prevSelected) => [...prevSelected, ...rowsFromPage]);
+        setRemainingToSelect((prevRemaining) => prevRemaining ? prevRemaining - rowsFromPage.length : null);
       }
     }
-  }, [numberValue, data, pageSize]);
+  }, [data, pageSize, remainingToSelect]);
 
   return (
     <div className='w-full h-screen flex flex-col justify-center items-center'>
@@ -146,6 +148,7 @@ function App() {
               />
 
               <Column selectionMode="multiple" headerStyle={{ width: '3rem' }} />
+              <Column field="id" header="Id" />
               <Column field="title" header="Title" />
               <Column field="place_of_origin" header="Place of Origin" />
               <Column
@@ -166,7 +169,8 @@ function App() {
               template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
               className="paginator-custom gap-5"
             />
-
+            <p>numberValue: {numberValue}</p>
+            <p>pageNumber: {pageNumber}</p>
           </div>
         </>
       ) : (

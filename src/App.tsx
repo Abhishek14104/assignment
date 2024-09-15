@@ -51,13 +51,10 @@ function App() {
   
       setSelectedRows([]);
       setRemainingToSelect(totalRowsToSelect);
-
-      console.log({totalRowsToSelect});
       setNumberValue(totalRowsToSelect);
     } else {
       alert('Invalid number');
     }
-    console.log({selectedRows});
   };
 
   useEffect(() => {
@@ -72,25 +69,17 @@ function App() {
       remainingRowsToSelect -= rowsFromPage.length;
 
       setSelectedRows(rowsToSelect);
-
-      console.log({remainingRowsToSelect});
       setRemainingToSelect(remainingRowsToSelect);
     }
   }, [numberValue, data, pageSize, rowClick]);
 
   const onPageChange = useCallback(async (event: { page: number }) => {
     setPageNumber(event.page + 1);
-    console.log({data});
 
     if (remainingToSelect) {
-      console.log("Page change ho gaya");
-
       if (!loading) {
         let nextPageData = data.slice((event.page) * pageSize, (event.page + 1) * pageSize);
         let rowsFromPage = nextPageData.slice(0, Math.min(remainingToSelect, pageSize));
-
-        console.log({remainingToSelect});
-        console.log({rowsFromPage});
 
         setSelectedRows((prevSelected) => [...prevSelected, ...rowsFromPage]);
         setRemainingToSelect((prevRemaining) => prevRemaining ? prevRemaining - rowsFromPage.length : null);
@@ -112,7 +101,8 @@ function App() {
   return (
     <div className='flex justify-center items-center min-h-screen p-4'>
       <div className='w-full max-w-4xl'>
-        {!loading && !dataLoaded && <p>Loading data...</p>}
+        {loading && <p>Data Loading...</p>}
+
         {error && <p>Error: {error}</p>}
 
         {!loading && !error && data && data.length > 0 ? (
@@ -138,7 +128,7 @@ function App() {
                 rowClassName={(rowData) =>
                   selectedRows.includes(rowData) ? 'bg-blue-100' : ''
                 }
-                className='space-y-4' // Gap between rows
+                className='space-y-4' 
               >
                 <Column
                   header={
@@ -153,7 +143,7 @@ function App() {
                               className='border px-2 py-2 rounded-lg'
                               value={inputValue}
                               onChange={handleInputChange}
-                              autoFocus // Add autofocus here
+                              autoFocus 
                             />
                             <button type='submit' className='px-3 py-2 bg-slate-500 text-white rounded-lg'>Submit</button>
                           </form>
@@ -165,13 +155,12 @@ function App() {
                 />
 
                 <Column
-                  selectionMode="multiple"
                   body={(rowData: Artwork) => (
                     <input
                       type="checkbox"
                       checked={selectedRows.includes(rowData)}
                       onChange={() => handleRowSelection(rowData)}
-                      className="custom-checkbox" // Apply custom styling
+                      className="custom-checkbox" 
                     />
                   )}
                   headerStyle={{ width: '3rem' }}

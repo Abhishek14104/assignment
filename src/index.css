@@ -19,4 +19,12 @@
     margin-right: 0;
   }
 
+  .p-checkbox-icon {
+    display: none !important; /* Hide PrimeReact's default checkmark */
+  }
+  .selected-row {
+    background-color: #d1e7dd; /* Light green for selected rows */
+  }
+  
+
   

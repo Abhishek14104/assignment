@@ -9,6 +9,7 @@ import useApi from './hooks/useApi';
 import './index.css';
 
 interface Artwork {
+  id: number; // Ensure each Artwork has a unique id
   title: string;
   place_of_origin: string;
   inscriptions: string | null;
@@ -45,16 +46,19 @@ function App() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const valueAsNumber = parseFloat(inputValue);
-  
+
     if (!isNaN(valueAsNumber) && valueAsNumber > 0) {
       const totalRowsToSelect = valueAsNumber;
-  
+
       setSelectedRows([]);
       setRemainingToSelect(totalRowsToSelect);
+
+      console.log({ totalRowsToSelect });
       setNumberValue(totalRowsToSelect);
     } else {
       alert('Invalid number');
     }
+    console.log({ selectedRows });
   };
 
   useEffect(() => {
@@ -62,36 +66,42 @@ function App() {
       let rowsToSelect: Artwork[] = [];
       let remainingRowsToSelect = remainingToSelect !== null ? remainingToSelect : numberValue;
 
-      let currentPageData = data.slice(0, pageSize);
-      let rowsFromPage = currentPageData.slice(0, Math.min(remainingRowsToSelect, pageSize));
-      
+      const currentPageData = data.slice(0, pageSize);
+      const rowsFromPage = currentPageData.slice(0, Math.min(remainingRowsToSelect, pageSize));
+
       rowsToSelect = [...selectedRows, ...rowsFromPage];
       remainingRowsToSelect -= rowsFromPage.length;
 
       setSelectedRows(rowsToSelect);
+
+      console.log({ remainingRowsToSelect });
       setRemainingToSelect(remainingRowsToSelect);
     }
   }, [numberValue, data, pageSize, rowClick]);
 
-  const onPageChange = useCallback(async (event: { page: number }) => {
-    setPageNumber(event.page + 1);
+  const onPageChange = useCallback(
+    (event: { page: number }) => {
+      setPageNumber(event.page + 1);
 
-    if (remainingToSelect) {
-      if (!loading) {
-        let nextPageData = data.slice((event.page) * pageSize, (event.page + 1) * pageSize);
-        let rowsFromPage = nextPageData.slice(0, Math.min(remainingToSelect, pageSize));
+      if (remainingToSelect && data) {
+        const nextPageData = data.slice(event.page * pageSize, (event.page + 1) * pageSize);
 
-        setSelectedRows((prevSelected) => [...prevSelected, ...rowsFromPage]);
-        setRemainingToSelect((prevRemaining) => prevRemaining ? prevRemaining - rowsFromPage.length : null);
+        const rowsToSelect = nextPageData.slice(0, Math.min(remainingToSelect, pageSize));
+        
+        const updatedSelectedRows = [...selectedRows, ...rowsToSelect];
+
+        setSelectedRows(updatedSelectedRows);
+        setRemainingToSelect((prevRemaining) => prevRemaining ? prevRemaining - rowsToSelect.length : null);
       }
-    }
-  }, [data, pageSize, remainingToSelect]);
+    },
+    [data, pageSize, remainingToSelect, selectedRows]
+  );
 
   const handleRowSelection = (rowData: Artwork) => {
     setSelectedRows((prevSelected) => {
-      const isSelected = prevSelected.includes(rowData);
+      const isSelected = prevSelected.some(item => item.id === rowData.id);
       if (isSelected) {
-        return prevSelected.filter(item => item !== rowData);
+        return prevSelected.filter(item => item.id !== rowData.id);
       } else {
         return [...prevSelected, rowData];
       }
@@ -101,8 +111,11 @@ function App() {
   return (
     <div className='flex justify-center items-center min-h-screen p-4'>
       <div className='w-full max-w-4xl'>
-        {loading && <p>Data Loading...</p>}
-
+        {loading && (
+          <div className="flex justify-center items-center h-full">
+            <p>Loading data...</p>
+          </div>
+        )}
         {error && <p>Error: {error}</p>}
 
         {!loading && !error && data && data.length > 0 ? (
@@ -126,9 +139,9 @@ function App() {
                 selection={selectedRows}
                 onSelectionChange={(e: any) => setSelectedRows(e.value)}
                 rowClassName={(rowData) =>
-                  selectedRows.includes(rowData) ? 'bg-blue-100' : ''
+                  selectedRows.some((selectedRow) => selectedRow.id === rowData.id) ? 'bg-blue-100' : ''
                 }
-                className='space-y-4' 
+                className='space-y-4' // Gap between rows
               >
                 <Column
                   header={
@@ -143,7 +156,6 @@ function App() {
                               className='border px-2 py-2 rounded-lg'
                               value={inputValue}
                               onChange={handleInputChange}
-                              autoFocus 
                             />
                             <button type='submit' className='px-3 py-2 bg-slate-500 text-white rounded-lg'>Submit</button>
                           </form>
@@ -155,17 +167,18 @@ function App() {
                 />
 
                 <Column
+                  selectionMode="multiple"
                   body={(rowData: Artwork) => (
                     <input
                       type="checkbox"
-                      checked={selectedRows.includes(rowData)}
+                      checked={selectedRows.some(row => row.id === rowData.id)}
                       onChange={() => handleRowSelection(rowData)}
-                      className="custom-checkbox" 
+                      className="custom-checkbox" // Apply custom styling
                     />
                   )}
                   headerStyle={{ width: '3rem' }}
                 />
-                <Column field="title" header="Title" headerStyle={{ width: '10rem' }} />
+                <Column field="title" header="Title" headerStyle={{ width: '10rem' }}/>
                 <Column field="place_of_origin" header="Place of Origin" headerStyle={{ width: '8rem' }} />
                 <Column
                   field="inscriptions"
@@ -173,9 +186,9 @@ function App() {
                   body={(rowData: Artwork) => rowData.inscriptions ? rowData.inscriptions : "--"}
                   headerStyle={{ width: '25rem'}}
                 />
-                <Column field="artist_title" header="Artist" headerStyle={{ width: '10rem' }} />
-                <Column field="date_start" header="Starting Date" headerStyle={{ width: '6rem' }} />
-                <Column field="date_end" header="Ending Date" headerStyle={{ width: '6rem' }} />
+                <Column field="artist_title" header="Artist" headerStyle={{ width: '10rem' }}/>
+                <Column field="date_start" header="Starting Date" headerStyle={{ width: '6rem' }}/>
+                <Column field="date_end" header="Ending Date" headerStyle={{ width: '6rem' }}/>
               </DataTable>
 
               <Paginator
